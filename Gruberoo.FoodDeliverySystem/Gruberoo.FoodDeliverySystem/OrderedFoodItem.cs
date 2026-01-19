@@ -1,7 +1,7 @@
 ﻿//==========================================================
-// Student Number : S10275126J
-// Student Name   : Guan Jiahong
-// Partner Name   : Victoria Kate Lee Hui Xin
+// Student Number : S10259724J
+// Student Name   : Victoria Kate Lee Hui Xin
+// Partner Name   : Guan Jiahong
 //==========================================================
 
 using System;
@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Gruberoo.FoodDeliverySystem
 {
-    internal class OrderedFoodItem
+    internal class OrderedFoodItem : FoodItem
     {
     }
 }
