@@ -14,5 +14,47 @@ namespace Gruberoo.FoodDeliverySystem
 {
     internal class Menu
     {
+        //fields
+        public string MenuId { get; set; }
+        public string MenuName { get; set; }
+
+        public List<FoodItem> FoodItemList { get; private set; } = new List<FoodItem>();
+
+
+
+
+        //default constructor
+        public Menu()
+        {
+            MenuId = "";
+            MenuName = "";
+        }
+
+        //parameterised constructor
+        public Menu(string menuId, string menuName)
+        {
+            MenuId = menuId;
+            MenuName = menuName;
+        }
+
+        //methods
+        public void AddFoodItem(string FoodItem)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool GetFoodItem(string FoodItem)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DisplayFoodItems()
+        {
+
+        }
+        public override string ToString()
+        {
+            return "";
+        }
     }
 }
