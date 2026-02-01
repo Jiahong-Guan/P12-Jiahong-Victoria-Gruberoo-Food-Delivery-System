@@ -50,7 +50,10 @@ namespace Gruberoo.FoodDeliverySystem
 
         public void DisplayFoodItems()
         {
-
+            foreach (FoodItem foodItem in FoodItemList)
+            {
+                Console.WriteLine($"   - {foodItem.ItemName}: {foodItem.ItemDesc} - ${foodItem.ItemPrice}");
+            }
         }
         public override string ToString()
         {

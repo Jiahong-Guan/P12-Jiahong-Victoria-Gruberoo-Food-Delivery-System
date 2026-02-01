@@ -53,7 +53,10 @@ namespace Gruberoo.FoodDeliverySystem
 
         public void DisplayMenu()
         {
-
+            foreach (Menu menu in MenuList)
+            {
+                menu.DisplayFoodItems();
+            }
         }
 
         public void AddOrder(string Menu) 
