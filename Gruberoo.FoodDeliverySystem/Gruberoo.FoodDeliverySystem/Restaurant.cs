@@ -20,7 +20,9 @@ namespace Gruberoo.FoodDeliverySystem
         public string RestaurantEmail { get; set; }
 
         public List<Menu> MenuList { get; private set; } = new List<Menu>();
-        public List<Order> OrderList { get; private set; } = new List<Order>();
+        public Queue<Order> OrderQueue { get; private set; } = new Queue<Order>();
+
+        public Stack<Order> RefundStack { get; private set; } = new Stack<Order>();
         public List<SpecialOffer> SpecialOfferList { get; private set; } = new List<SpecialOffer>();
 
 
@@ -30,6 +32,7 @@ namespace Gruberoo.FoodDeliverySystem
             RestaurantId = "";
             RestaurantName = "";
             RestaurantEmail = "";
+            MenuList.Add(new Menu("M001", "Main Menu"));
         }
 
         //parameterised constructor
@@ -38,12 +41,13 @@ namespace Gruberoo.FoodDeliverySystem
             RestaurantId = restaurantId;
             RestaurantName = restaurantName;
             RestaurantEmail = restaurantEmail;
+            MenuList.Add(new Menu("M001", "Main Menu"));
         }
 
         //methods
         public void DisplayOrders()
         {
-
+            Console.WriteLine("Ordered Items");
         }
 
         public void DisplaySpecialOrders() 
@@ -59,19 +63,19 @@ namespace Gruberoo.FoodDeliverySystem
             }
         }
 
-        public void AddOrder(string Menu) 
+        public void AddMenu(Menu menu) 
         {
-
+            MenuList.Add(menu);
         }
 
-        public bool RemoveOrder(string Menu) 
+        public bool RemoveMenu(Menu menu) 
         {
-            return false;
+            return MenuList.Remove(menu);
         }
 
         public override string ToString()
         {
-            return "";
+            return $"RESTAURANT TO BE IMPLEMENTED";
         }
     }
 }

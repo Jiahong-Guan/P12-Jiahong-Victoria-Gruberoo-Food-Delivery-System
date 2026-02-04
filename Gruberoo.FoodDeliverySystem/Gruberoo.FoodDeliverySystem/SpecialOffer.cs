@@ -18,6 +18,7 @@ namespace Gruberoo.FoodDeliverySystem
         public string OfferDesc { get; set; }
         public double Discount { get; set; }
 
+
         public SpecialOffer()
         {
             OfferCode = "";

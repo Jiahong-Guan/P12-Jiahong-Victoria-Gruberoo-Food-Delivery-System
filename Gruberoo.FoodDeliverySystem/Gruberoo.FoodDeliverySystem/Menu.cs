@@ -21,8 +21,6 @@ namespace Gruberoo.FoodDeliverySystem
         public List<FoodItem> FoodItemList { get; private set; } = new List<FoodItem>();
 
 
-
-
         //default constructor
         public Menu()
         {
@@ -30,7 +28,7 @@ namespace Gruberoo.FoodDeliverySystem
             MenuName = "";
         }
 
-        //parameterised constructor
+        //parameterized constructor
         public Menu(string menuId, string menuName)
         {
             MenuId = menuId;
@@ -38,26 +36,32 @@ namespace Gruberoo.FoodDeliverySystem
         }
 
         //methods
-        public void AddFoodItem(string FoodItem)
+        public void AddFoodItem(FoodItem foodItem)
         {
-            throw new NotImplementedException();
+            FoodItemList.Add(foodItem);
         }
 
-        public bool GetFoodItem(string FoodItem)
+        public bool RemoveFoodItem(FoodItem foodItem)
         {
-            throw new NotImplementedException();
+            return FoodItemList.Remove(foodItem);
         }
 
         public void DisplayFoodItems()
         {
+            if (FoodItemList.Count == 0)
+            {
+                Console.WriteLine("   No food items available.");
+                return;
+            }
+
             foreach (FoodItem foodItem in FoodItemList)
             {
-                Console.WriteLine($"   - {foodItem.ItemName}: {foodItem.ItemDesc} - ${foodItem.ItemPrice}");
+                Console.WriteLine($"   - {foodItem.ItemName}: {foodItem.ItemDesc} - ${foodItem.ItemPrice.ToString("0.00")}");
             }
         }
         public override string ToString()
         {
-            return "";
+            return $"Menu ID: {MenuId} Menu Name: {MenuName}";
         }
     }
 }
