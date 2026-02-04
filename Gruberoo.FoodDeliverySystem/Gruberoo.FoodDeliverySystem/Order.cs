@@ -94,9 +94,9 @@ namespace Gruberoo.FoodDeliverySystem
 
         public void DisplayOrderedFoodItems()
         {
-            foreach (OrderedFoodItem item in OrderedItems)
+            for (int i = 0; i < OrderedItems.Count; i++)
             {
-                Console.WriteLine(item.ToString());
+                Console.WriteLine($"{i + 1}. {OrderedItems[i].ToString()}");
             }
         }
 
