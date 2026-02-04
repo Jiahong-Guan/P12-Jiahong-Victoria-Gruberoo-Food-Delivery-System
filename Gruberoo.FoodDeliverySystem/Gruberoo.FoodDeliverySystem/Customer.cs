@@ -19,16 +19,16 @@ namespace Gruberoo.FoodDeliverySystem
 
         public Dictionary<int, Order> Orders { get; private set; } = new Dictionary<int, Order>();
 
-        public Customer()
+        public Customer()   
         {
-            EmailAddress = "";
             CustomerName = "";
+            EmailAddress = "";
         }
 
-        public Customer(string emailAddress, string customerName)
+        public Customer(string customerName, string emailAddress)
         {
-            EmailAddress = emailAddress;
             CustomerName = customerName;
+            EmailAddress = emailAddress;
         }
 
         public void AddOrder(Order order)
@@ -38,10 +38,22 @@ namespace Gruberoo.FoodDeliverySystem
 
         public void DisplayAllOrders()
         {
-            Console.WriteLine("Order");
-            foreach (KeyValuePair<int, Order> items in Orders)
+            Console.WriteLine("All Orders");
+            Console.WriteLine("==========");
+            Console.WriteLine($"{"Order ID",-10} {"Customer",-13} {"Restaurant",-15} {"Delivery Date/Time",-20} {"Amount",-9} Status");
+            Console.WriteLine($"{"--------",-10} {"----------",-13} {"-------------",-15} {"------------------",-20} {"------",-9} ---------");
+
+            if (Orders.Count == 0)
             {
-                throw new NotImplementedException();
+                Console.WriteLine("No orders found.");
+                return;
+            }
+
+            foreach (KeyValuePair<int, Order> kvp in Orders)
+            {
+                Order order = kvp.Value;
+
+                Console.WriteLine(order.ToString());
             }
         }
 

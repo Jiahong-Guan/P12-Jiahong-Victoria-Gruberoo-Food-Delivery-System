@@ -19,32 +19,46 @@ namespace Gruberoo.FoodDeliverySystem
         public double OrderTotal { get; set; }
 
         // OrderStatus: Pending | Preparing | Cancelled | Delivered
-        public required string OrderStatus { get; set; }
+        public string OrderStatus { get; set; }
         public DateTime DeliveryDateTime { get; set; }
-        public required string DeliveryAddress { get; set; }
+        public string DeliveryAddress { get; set; }
 
         // OrderPayment: [CC] Credit Card | [PP] PayPal | [CD] Cash on Delivery
-        public required string OrderPaymentMethod { get; set; }
+        public string OrderPaymentMethod { get; set; }
         public bool OrderPaid { get; set; }
+        
+        public Customer Customer { get; set; }
+
+        public Restaurant Restaurant { get; private set; }
 
         public List<OrderedFoodItem> OrderedItems { get; private set; } = new List<OrderedFoodItem>();
+
+        public SpecialOffer SpecialOffer { get; set; }
 
         public Order()
         {
             OrderId = 0;
+            Customer = new Customer();
+            Restaurant = new Restaurant();
+            DeliveryDateTime = DateTime.Now;
+            DeliveryAddress = "";
             OrderDateTime = DateTime.Now;
             OrderTotal = 0;
-            OrderStatus = "";
+            OrderStatus = "Preparing";
+            OrderPaymentMethod = "CC";
+            OrderPaid = false;
         }
 
-        public Order(int orderId, DateTime orderDateTime, double orderTotal, string orderStatus, DateTime deliveryDateTime, string deliveryAddress, string orderPaymentMethod, bool orderPaid)
+        public Order(int orderId, Customer customer, Restaurant restaurant, DateOnly deliveryDate, TimeOnly deliveryTime, string deliveryAddress,  DateTime orderDateTime, double orderTotal, string orderStatus, string orderPaymentMethod, bool orderPaid)
         {
             OrderId = orderId;
+            Customer = customer;
+            Restaurant = restaurant;
+            DeliveryDateTime = deliveryDate.ToDateTime(deliveryTime);
+            DeliveryAddress = deliveryAddress;
             OrderDateTime = orderDateTime;
             OrderTotal = orderTotal;
             OrderStatus = orderStatus;
-            DeliveryDateTime = deliveryDateTime;
-            DeliveryAddress = deliveryAddress;
             OrderPaymentMethod = orderPaymentMethod;
             OrderPaid = orderPaid;
         }
@@ -56,17 +70,26 @@ namespace Gruberoo.FoodDeliverySystem
             {
                 total += item.SubTotal;
             }
-            return total;
+
+            // Delivery Fee
+            total += 5.00;
+            return Math.Round(total, 2);
         }
 
         public void AddOrderedFoodItem(OrderedFoodItem item)
         {
             OrderedItems.Add(item);
+            OrderTotal = CalculateOrderTotal();
         }
 
         public bool RemoveOrderedFoodItem(OrderedFoodItem item)
         {
-            return OrderedItems.Remove(item);
+            bool removed = OrderedItems.Remove(item);
+            if (removed)
+            {
+                OrderTotal = CalculateOrderTotal();
+            }
+            return removed;
         }
 
         public void DisplayOrderedFoodItems()
@@ -79,7 +102,7 @@ namespace Gruberoo.FoodDeliverySystem
 
         public override string ToString()
         {
-            return $"Order To be implement";
+            return $"{OrderId,-10} {Customer.CustomerName,-13} {Restaurant.RestaurantName,-15} {DeliveryDateTime.ToString("dd/MM/yyyy HH:mm"),-20} ${OrderTotal.ToString("0.00"),-8} {OrderStatus}";
         }
     }
 }

@@ -29,7 +29,7 @@ namespace Gruberoo.FoodDeliverySystem
             Customise = "";
         }
 
-        //parameterised constructor
+        //parameterized constructor
         public FoodItem(string itemName, string itemDesc, double itemPrice, string customise) 
         {
             ItemName = itemName;
@@ -41,7 +41,7 @@ namespace Gruberoo.FoodDeliverySystem
         //methods
         public override string ToString()
         {
-            return "";
+            return $"Name: {ItemName} Description: {ItemDesc} Price: {ItemPrice} Customise: {(Customise != "" ? Customise : "None")}";
         }
     }
 }
