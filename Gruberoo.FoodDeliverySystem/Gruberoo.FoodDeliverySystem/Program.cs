@@ -195,12 +195,17 @@ void InitializeOrders(SortedDictionary<int, Order> orderList, List<Customer> cus
                     continue;
                 }
                 string status = parts[8];
-                string items = parts[9]; // TODO: Items consist of all after 10th item
+                string items = string.Join(",", parts.Skip(9)).Trim('"');
 
                 string paymentMethod = "CC";
-                // TODO: Probelm for future me sort the data out (items)
 
                 Order order = new Order(orderId, customer, restaurant, deliveryDate, deliveryTime, deliveryAddress, creationDateTime, totalAmount, status, paymentMethod, true);
+
+                if (!string.IsNullOrEmpty(items) && items != "\"\"")
+                {
+                    ParseFoodItems(items, restaurant, order);
+                }
+
                 orderList.Add(order.OrderId, order);
                 customer.AddOrder(order);
                 restaurant.OrderQueue.Enqueue(order);
@@ -211,6 +216,48 @@ void InitializeOrders(SortedDictionary<int, Order> orderList, List<Customer> cus
     catch (Exception ex)
     {
         Console.WriteLine($"Error loading orders: {ex.Message}");
+    }
+}
+
+void ParseFoodItems(string itemsData, Restaurant restaurant, Order order)
+{
+    //==========================================================
+    // Student Number : S10259724J
+    // Student Name   : Victoria Kate Lee Hui Xin
+    //==========================================================
+    string cleanItemsData = itemsData.Trim('"');
+    string[] itemPairs = cleanItemsData.Split('|', StringSplitOptions.RemoveEmptyEntries);
+
+    foreach (string pair in itemPairs)
+    {
+        string[] itemDetails = pair.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        if (itemDetails.Length >= 2)
+        {
+            string itemName = itemDetails[0].Trim();
+            if (int.TryParse(itemDetails[1].Trim(), out int quantity))
+            {
+                // Search for food item in all restaurant menus
+                FoodItem foodItem = null;
+                foreach (Menu menu in restaurant.MenuList)
+                {
+                    foodItem = menu.FoodItemList.FirstOrDefault(fi => fi.ItemName.Equals(itemName, StringComparison.OrdinalIgnoreCase));
+                    if (foodItem != null)
+                        break;
+                }
+
+                if (foodItem != null)
+                {
+                    OrderedFoodItem orderedItem = new OrderedFoodItem(
+                        foodItem.ItemName,
+                        foodItem.ItemDesc,
+                        foodItem.ItemPrice,
+                        "",
+                        quantity);
+
+                    order.OrderedItems.Add(orderedItem);
+                }
+            }
+        }
     }
 }
 
@@ -334,6 +381,86 @@ void ProcessOrder()
     // Student Number : S10275126J
     // Student Name   : Guan Jiahong
     //==========================================================
+    Console.WriteLine("Process Order");
+    Console.WriteLine("=============");
+
+    Console.Write("Enter Restaurant ID: ");
+    string restId = Console.ReadLine()?.Trim().ToUpper();
+
+    Restaurant restaurant = restaurants.FirstOrDefault(r => r.RestaurantId == restId);
+    if (restaurant == null)
+    {
+        Console.WriteLine("Restaurant not found.");
+        return;
+    }
+
+    if (restaurant.OrderQueue.Count == 0)
+    {
+        Console.WriteLine("No orders to process.");
+        return;
+    }
+
+    foreach (Order order in restaurant.OrderQueue.ToList())
+    {
+        Console.WriteLine($"\nOrder {order.OrderId}:");
+        Console.WriteLine($"Customer: {order.Customer.CustomerName}");
+        order.DisplayOrderedFoodItems();
+        Console.WriteLine($"Delivery date/time: {order.DeliveryDateTime:dd/MM/yyyy HH:mm}");
+        Console.WriteLine($"Total Amount: ${order.OrderTotal:F2}");
+        Console.WriteLine($"Order Status: {order.OrderStatus}");
+
+        Console.Write("\n[C]onfirm / [R]eject / [S]kip / [D]eliver: ");
+        string choice = Console.ReadLine()?.Trim().ToUpper();
+
+        switch (choice)
+        {
+            case "C":
+                if (order.OrderStatus == "Pending")
+                {
+                    order.OrderStatus = "Preparing";
+                    Console.WriteLine($"Order {order.OrderId} confirmed. Status: Preparing");
+                }
+                else
+                {
+                    Console.WriteLine($"Cannot confirm order. Current status: {order.OrderStatus}");
+                }
+                break;
+
+            case "R":
+                if (order.OrderStatus == "Pending")
+                {
+                    order.OrderStatus = "Rejected";
+                    restaurant.RefundStack.Push(order);
+                    Console.WriteLine($"Order {order.OrderId} rejected. Refund of ${order.OrderTotal:F2} processed.");
+                }
+                else
+                {
+                    Console.WriteLine($"Cannot reject order. Current status: {order.OrderStatus}");
+                }
+                break;
+
+            case "D":
+                if (order.OrderStatus == "Preparing")
+                {
+                    order.OrderStatus = "Delivered";
+                    Console.WriteLine($"Order {order.OrderId} delivered.");
+                }
+                else
+                {
+                    Console.WriteLine($"Cannot deliver order. Current status: {order.OrderStatus}");
+                }
+                break;
+
+            case "S":
+                Console.WriteLine("Skipping this order.");
+                break;
+
+            default:
+                Console.WriteLine("Invalid choice. Skipping.");
+                break;
+
+        }
+    }
 }
 
 void ModifyOrder()
@@ -345,13 +472,79 @@ void ModifyOrder()
     //==========================================================
 }
 
-void DeleteOrder()
+void DeleteOrder(List<Customer> customerList)
 {
     // Basic Function Qn 8
     //==========================================================
     // Student Number : S10275126J
     // Student Name   : Guan Jiahong
     //==========================================================
+    Console.WriteLine("Delete Order");
+    Console.WriteLine("============");
+
+    Console.Write("Enter Customer Email: ");
+    string custEmail = Console.ReadLine()?.Trim();
+
+    Customer customer = customerList.FirstOrDefault(c => c.EmailAddress == custEmail);
+    if (customer == null)
+    {
+        Console.WriteLine("Customer not found.");
+        return;
+    }
+
+    // Show pending orders
+    var pendingOrders = customer.Orders.Values.Where(o => o.OrderStatus == "Pending").ToList();
+    if (pendingOrders.Count == 0)
+    {
+        Console.WriteLine("No pending orders found.");
+        return;
+    }
+
+    Console.WriteLine("Pending Orders:");
+    foreach (var order in pendingOrders)
+    {
+        Console.WriteLine($"{order.OrderId}");
+    }
+
+    Console.Write("Enter Order ID: ");
+    if (!int.TryParse(Console.ReadLine(), out int orderId))
+    {
+        Console.WriteLine("\nInvalid Order ID.");
+        return;
+    }
+
+    Order orderToDelete = pendingOrders.FirstOrDefault(o => o.OrderId == orderId);
+    if (orderToDelete == null)
+    {
+        Console.WriteLine("\nOrder not found or not pending.");
+        return;
+    }
+
+    Console.WriteLine($"\nCustomer: {customer.CustomerName}");
+    Console.WriteLine("Ordered Items:");
+    orderToDelete.DisplayOrderedFoodItems();
+    Console.WriteLine($"Delivery date/time: {orderToDelete.DeliveryDateTime:dd/MM/yyyy HH:mm}");
+    Console.WriteLine($"Total Amount: ${orderToDelete.OrderTotal:F2}");
+    Console.WriteLine($"Order Status: {orderToDelete.OrderStatus}");
+
+    Console.Write("Confirm deletion? [Y/N]: ");
+    if (Console.ReadLine()?.Trim().ToUpper() == "Y")
+    {
+        orderToDelete.OrderStatus = "Cancelled";
+
+        Restaurant restaurant = restaurants.FirstOrDefault(r => r.RestaurantId == orderToDelete.Restaurant.RestaurantId);
+        if (restaurant != null)
+        {
+            restaurant.RefundStack.Push(orderToDelete);
+            // TODO: Might fail to delete the order from program.cs order list
+        }
+
+        Console.WriteLine($"\nOrder {orderId} cancelled. Refund of ${orderToDelete.OrderTotal:F2} processed.");
+    }
+    else
+    {
+        Console.WriteLine("Deletion cancelled.");
+    }
 }
 
 
@@ -389,7 +582,7 @@ while (true)
             ModifyOrder();
             break;
         case "6":
-            DeleteOrder();
+            DeleteOrder(customers);
             break;
         case "0":
             Console.WriteLine("\n\nExiting the program. Goodbye!");
@@ -402,3 +595,4 @@ while (true)
     // spacer
     Console.WriteLine();
 }
+

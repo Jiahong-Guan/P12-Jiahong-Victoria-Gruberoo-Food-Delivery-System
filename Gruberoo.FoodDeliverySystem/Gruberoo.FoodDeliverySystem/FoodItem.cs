@@ -41,7 +41,7 @@ namespace Gruberoo.FoodDeliverySystem
         //methods
         public override string ToString()
         {
-            return $"Name: {ItemName} Description: {ItemDesc} Price: {ItemPrice} Customise: {(Customise != "" ? Customise : "None")}";
+            return $"{ItemName}";
         }
     }
 }

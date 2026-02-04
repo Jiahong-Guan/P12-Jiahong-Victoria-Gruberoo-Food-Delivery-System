@@ -20,9 +20,9 @@ namespace Gruberoo.FoodDeliverySystem
         public string RestaurantEmail { get; set; }
 
         public List<Menu> MenuList { get; private set; } = new List<Menu>();
-        public Queue<Order> OrderQueue { get; private set; } = new Queue<Order>();
+        public Queue<Order> OrderQueue { get; set; } = new Queue<Order>();
 
-        public Stack<Order> RefundStack { get; private set; } = new Stack<Order>();
+        public Stack<Order> RefundStack { get; set; } = new Stack<Order>();
         public List<SpecialOffer> SpecialOfferList { get; private set; } = new List<SpecialOffer>();
 
 

@@ -27,16 +27,21 @@ namespace Gruberoo.FoodDeliverySystem
         }
 
         //parameterised constructor
-        public OrderedFoodItem(string itemName, string itemDesc, double itemPrice, string customise, int qtyOrdered, double subTotal) : base(itemName, itemDesc, itemPrice, customise)
+        public OrderedFoodItem(string itemName, string itemDesc, double itemPrice, string customise, int qtyOrdered) : base(itemName, itemDesc, itemPrice, customise)
         {
             QtyOrdered = qtyOrdered;
-            SubTotal = subTotal;
+            SubTotal = CalculateSubTotal();
         }
 
         //methods
         public double CalculateSubTotal()
         {
             return QtyOrdered * ItemPrice;
+        }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} - {QtyOrdered}";
         }
     }
 }
