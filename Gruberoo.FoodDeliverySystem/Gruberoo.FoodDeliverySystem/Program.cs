@@ -6,7 +6,9 @@
 //==========================================================
 
 using Gruberoo.FoodDeliverySystem;
+using System.ComponentModel.Design;
 using System.Globalization;
+using System.Xml.Serialization;
 
 List<Restaurant> restaurants = new List<Restaurant>();
 List<Customer> customers = new List<Customer>();
@@ -343,35 +345,63 @@ void CreateNewOrder(List<Restaurant> restaurants)
             {
                 Console.Write("Enter item number (0 to finish) : ");
                 int itemNo = int.Parse(Console.ReadLine());
-
-                if (itemNo == 0)
-                {
-                    Console.Write("Any special request? [Y/N] : ");
-                    string choice = Console.ReadLine();
-                    if (choice.ToLower() == "y") {
-                        Console.Write("Special Request: ");
-                        string specReq = Console.ReadLine();
-                        // TODO: Later come back for this
-
-                    }
-                    
-                    break;
-                }
-
                 Console.Write("Enter quantity: ");
                 int quan = int.Parse(Console.ReadLine());
                 
                 FoodItem foodItem = new FoodItem();
-
+                if (itemNo == 0)
+                {
+                    Console.Write("Any special request? [Y/N] : ");
+                    string choice = Console.ReadLine();
+                    while (true)
+                    {
+                        if (choice.ToLower() == "y")
+                        {
+                            Console.Write("Special Request: ");
+                            string specReq = Console.ReadLine();
+                        }
+                        else if (choice.ToLower() == "n")
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Invalid input. Please enter Y or N.");
+                        }
+                    }
+                    break;
+                }
             }
-            
 
+            // TODO: Later come back for this
 
-            return;
+            Console.WriteLine("");
+            Console.WriteLine("Order Total: ");
+            Console.WriteLine("Proceed to payment? [Y/N]: ");
+            string payment = Console.ReadLine();
+
+            while (true)
+                if (payment.ToLower() == "y")
+                {
+                    Console.Write("Payment method: ");
+                    Console.Write("[CC] Credit Card / [PP] PayPal / [CD] Cash on Delivery: ");
+
+                    string PayMethod = Console.ReadLine();
+                }
+                else if (payment.ToLower() == "n")
+                { break; }
+                else
+                {
+                    Console.WriteLine("Invalid input. Please enter Y or N.");
+                }
+
+            Console.WriteLine("Order 1004 created successfully! Status: Pending");
         }
 
+        break;
     }
     Console.WriteLine("Invalid restaurant ID.");
+    return;
 }
 
 void ProcessOrder()
@@ -463,14 +493,89 @@ void ProcessOrder()
     }
 }
 
-void ModifyOrder()
+void ModifyOrder(List<Customer> customerList)
 {
     // Basic Function Qn 7
     //==========================================================
     // Student Number : S10259724J
     // Student Name   : Victoria Kate Lee Hui Xin
     //==========================================================
-}
+    Console.WriteLine("Modify Order");
+    Console.WriteLine("============");
+
+    Console.Write("Enter Customer Email: ");
+    string custEmail = Console.ReadLine()?.Trim();
+
+    Customer customer = customerList.FirstOrDefault(c => c.EmailAddress == custEmail);
+    if (customer == null)
+    {
+        Console.WriteLine("Customer not found.");
+        return;
+    }
+
+    // Show pending orders
+    var pendingOrders = customer.Orders.Values.Where(o => o.OrderStatus == "Pending").ToList();
+    if (pendingOrders.Count == 0)
+    {
+        Console.WriteLine("No pending orders found.");
+        return;
+    }
+
+    Console.WriteLine("Pending Orders:");
+    foreach (var order in pendingOrders)
+    {
+        Console.WriteLine($"{order.OrderId}");
+    }
+
+    Console.Write("Enter Order ID: ");
+    if (!int.TryParse(Console.ReadLine(), out int orderId))
+    {
+        Console.WriteLine("\nInvalid Order ID.");
+        return;
+    }
+
+    Order orderToModify = pendingOrders.FirstOrDefault(o => o.OrderId == orderId);
+    if (orderToModify == null)
+    {
+        Console.WriteLine("\nOrder not found or not pending.");
+        return;
+    }
+
+    //address + delivery date/time
+    Console.WriteLine("Address:");
+    foreach (var order in pendingOrders)
+    {
+        Console.WriteLine($"{order.DeliveryAddress}");
+    }
+    Console.WriteLine("Delivery Date/Time:");
+    foreach (var order in pendingOrders)
+    {
+        Console.WriteLine($"{order.DeliveryDateTime}");
+    }
+
+    //TODO: options user can choose to modify
+    Console.Write("Modify: [1] Items [2] Address [3] Delivery Time: ");
+    string choice = Console.ReadLine();
+
+    switch (choice)
+    {
+        case "1":
+            Console.Write("Enter new Order Item (format: ItemName,Quantity): ");
+            string newOrderItem = Console.ReadLine()?.Trim();
+            
+
+            break;
+        case "2":
+            Console.Write("Enter new Delivery Address: ");
+            string newDelvAddr = Console.ReadLine();
+            break;
+        case "3":
+            Console.Write("Enter new Delivery Time (hh:mm): ");
+            DateTime newDelvTime = DateTime.Parse(Console.ReadLine());
+            break;
+    }
+
+    }
 
 void DeleteOrder(List<Customer> customerList)
 {
@@ -579,7 +684,7 @@ while (true)
             ProcessOrder();
             break;
         case "5":
-            ModifyOrder();
+            ModifyOrder(customers);
             break;
         case "6":
             DeleteOrder(customers);
