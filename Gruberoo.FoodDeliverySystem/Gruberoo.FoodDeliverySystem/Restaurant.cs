@@ -47,12 +47,44 @@ namespace Gruberoo.FoodDeliverySystem
         //methods
         public void DisplayOrders()
         {
-            Console.WriteLine("Ordered Items");
+            Console.WriteLine($"Orders for {RestaurantName}:");
+            Console.WriteLine("==============================");
+
+            if (OrderQueue.Count == 0)
+            {
+                Console.WriteLine("No orders found.");
+                return;
+            }
+
+            foreach (Order order in OrderQueue)
+            {
+                Console.WriteLine($"Order ID: {order.OrderId}");
+                Console.WriteLine($"Customer: {order.Customer.EmailAddress}");
+                Console.WriteLine($"Delivery: {order.DeliveryDateTime:dd/MM/yyyy HH:mm}");
+                Console.WriteLine($"Status: {order.OrderStatus}");
+                Console.WriteLine($"Total: ${order.OrderTotal:F2}");
+                Console.WriteLine("--------------------------");
+            }
         }
 
         public void DisplaySpecialOrders() 
         {
+            Console.WriteLine($"Special Offers for {RestaurantName}:");
+            Console.WriteLine("===================================");
 
+            if (SpecialOfferList.Count == 0)
+            {
+                Console.WriteLine("No special offers available.");
+                return;
+            }
+
+            foreach (SpecialOffer offer in SpecialOfferList)
+            {
+                Console.WriteLine($"Code: {offer.OfferCode}");
+                Console.WriteLine($"Description: {offer.OfferDesc}");
+                Console.WriteLine($"Discount: {offer.Discount}%");
+                Console.WriteLine("--------------------------");
+            }
         }
 
         public void DisplayMenu()
@@ -75,7 +107,7 @@ namespace Gruberoo.FoodDeliverySystem
 
         public override string ToString()
         {
-            return $"RESTAURANT TO BE IMPLEMENTED";
+            return $"{RestaurantName} (ID: {RestaurantId}) - {RestaurantEmail}";
         }
     }
 }
