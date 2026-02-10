@@ -27,6 +27,8 @@ void DisplayMenu()
     Console.WriteLine("4. Process an order");
     Console.WriteLine("5. Modify an existing order");
     Console.WriteLine("6. Delete an existing order");
+    Console.WriteLine("7. Bulk process unprocessed orders");
+    Console.WriteLine("8. Display total order amounts");
     Console.WriteLine("0. Exit");
     Console.Write("Enter your choice: ");
 }
@@ -214,6 +216,12 @@ void InitializeOrders(SortedDictionary<int, Order> orderList, List<Customer> cus
                 orderList.Add(order.OrderId, order);
                 customer.AddOrder(order);
                 restaurant.OrderQueue.Enqueue(order);
+
+                // All cancelled orders are pushed to refund stack
+                if (status == "Cancelled" || status == "Rejected")
+                {
+                    restaurant.RefundStack.Push(order);
+                }
             }
         }
         Console.WriteLine($"{orderList.Count} orders loaded!");
@@ -494,11 +502,11 @@ void CreateNewOrder(List<Restaurant> restaurants)
         if (!File.Exists(filePath) || new FileInfo(filePath).Length == 0)
         {
             string header = "OrderId,CustomerEmail,RestaurantId,DeliveryDate,DeliveryTime,DeliveryAddress,CreatedDateTime,TotalAmount,Status,Items";
-            File.WriteAllText(filePath, header + Environment.NewLine + orderLine);
+            File.WriteAllText(filePath, header + orderLine);
         }
         else
         {
-            File.AppendAllText(filePath, Environment.NewLine + orderLine);
+            File.AppendAllText(filePath, orderLine);
         }
     } catch (Exception ex)
     {
@@ -565,7 +573,7 @@ void ProcessOrder()
                 {
                     order.OrderStatus = "Rejected";
                     restaurant.RefundStack.Push(order);
-                    Console.WriteLine($"Order {order.OrderId} rejected. Refund of ${order.OrderTotal:F2} processed.");
+                    Console.WriteLine($"Order {order.OrderId} rejected. Refund of ${order.OrderTotal.ToString("0.00")} processed.");
                 }
                 else
                 {
@@ -1085,6 +1093,70 @@ void DeleteOrder(List<Customer> customerList)
     }
 }
 
+void BulkProcessOrders()
+{
+    // Advanced Function Qn 1
+    //==========================================================
+    // Student Number : S10275126J
+    // Student Name   : Guan Jiahong
+    //==========================================================
+    
+}
+
+void DisplayTotalOrderAmounts(List<Restaurant> restaurantsList)
+{
+    // Advanced Function Qn 2
+    //==========================================================
+    // Student Number : S10259724J
+    // Student Name   : Victoria Kate Lee Hui Xin
+    //==========================================================
+    Console.WriteLine("\nTotal Order Amounts");
+    Console.WriteLine("===================");
+
+    double totalGruberooEarnings = 0;
+    double totalAllRefunds = 0;
+    double totalAllRestaurantEarnings = 0;
+
+    foreach (Restaurant restaurant in restaurantsList)
+    {
+        double restaurantEarnings = 0;
+        double totalRefunds = 0;
+
+        List<Order> deliveredOrders = restaurant.OrderQueue.Where(o => o.OrderStatus == "Delivered").ToList();
+        
+        foreach (Order order in deliveredOrders)
+        {
+            // Gruberoo calculation:
+            // 30% of each order amount (excluding delivery fee) + 5$ delivery fee.
+            double gruberooCommision = order.OrderTotal * 0.30;
+
+            totalGruberooEarnings += gruberooCommision;
+            restaurantEarnings += order.OrderTotal;
+        }
+
+        // refunds
+        foreach (Order refundedOrder in restaurant.RefundStack)
+        {
+            totalRefunds += refundedOrder.OrderTotal;
+        }
+
+        Console.WriteLine($"Restaurant: {restaurant.RestaurantName} ({restaurant.RestaurantId})");
+        Console.WriteLine($"   - Total order amount: ${restaurantEarnings.ToString("0.00")}");
+        Console.WriteLine($"   - Total refund amount: ${totalRefunds.ToString("0.00")}\n");
+
+        totalAllRefunds += totalRefunds;
+        totalAllRestaurantEarnings += restaurantEarnings;
+    }
+
+    // display all restaurant amount and final amount Gruberoo earned
+    Console.WriteLine("\n========================================");
+    Console.WriteLine($"GRAND TOTALS:");
+    Console.WriteLine($"  Total order amount: ${totalAllRestaurantEarnings.ToString("0.00")}");
+    Console.WriteLine($"  Total refunds: ${totalAllRefunds.ToString("0.00")}");
+    Console.WriteLine($"  Final Gruberoo Earnings: ${totalGruberooEarnings.ToString("0.00")}");
+    Console.WriteLine("========================================");
+}
+
 
 // Main program execution
 Console.WriteLine("Welcome to the Gruberoo Food Delivery System");
@@ -1097,7 +1169,7 @@ while (true)
 {
     DisplayMenu();
 
-    string? choice = Console.ReadLine();
+    string? choice = Console.ReadLine().Trim();
 
     // spacer
     Console.WriteLine();
@@ -1121,6 +1193,12 @@ while (true)
             break;
         case "6":
             DeleteOrder(customers);
+            break;
+        case "7":
+            BulkProcessOrders();
+            break;
+        case "8":
+            DisplayTotalOrderAmounts(restaurants);
             break;
         case "0":
             Console.WriteLine("\n\nExiting the program. Goodbye!");
