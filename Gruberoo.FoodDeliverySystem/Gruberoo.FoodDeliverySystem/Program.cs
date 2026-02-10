@@ -984,7 +984,10 @@ void UpdateOrderInCSV(Order updatedOrder)
     //==========================================================
     try
     {
-        string[] allLines = File.ReadAllLines("./Data/orders.csv");
+        string filePath = "./Data/orders.csv";
+        string[] allLines = File.ReadAllLines(filePath);
+        bool orderFound = false;
+
         for (int i = 0; i < allLines.Length; i++)
         {
             // skip header
@@ -1007,10 +1010,19 @@ void UpdateOrderInCSV(Order updatedOrder)
                                  $"{updatedOrder.OrderStatus}," +
                                  $"{itemsString}";
 
-                    // Write back to csv file
-                    File.WriteAllLines("./Data/orders.csv", allLines);
+                    orderFound = true;
+                    break;
                 }
             }
+        }
+
+        if (orderFound)
+        {
+            File.WriteAllLines(filePath, allLines);
+        }
+        else
+        {
+            Console.WriteLine("Order not found in CSV for update.");
         }
     }
     catch (Exception ex)
@@ -1093,14 +1105,100 @@ void DeleteOrder(List<Customer> customerList)
     }
 }
 
-void BulkProcessOrders()
+void BulkProcessOrders(List<Restaurant> restaurantsList)
 {
     // Advanced Function Qn 1
     //==========================================================
     // Student Number : S10275126J
     // Student Name   : Guan Jiahong
     //==========================================================
+    Console.WriteLine("Bulk Processing of Unprocessed Orders");
+    Console.WriteLine("======================================");
+
+    // get today date
+    DateTime currentDateTime = DateTime.Now;
+    Console.WriteLine($"Current Date and Time: {currentDateTime.ToString("dd/MM/yyyy, HH:mm")}\n");
+
+    List<Order> pendingOrders = new List<Order>();
+
+    foreach (Restaurant restaurant in restaurants)
+    {
+        foreach (Order order in restaurant.OrderQueue)
+        {
+            if (order.OrderStatus == "Pending" && order.DeliveryDateTime.Date <= currentDateTime.Date)
+            {
+                pendingOrders.Add(order);
+            }
+        }
+    }
+
+    Console.WriteLine("\nProcessing orders:");
+    Console.WriteLine("====================");
+
+    int ordersProcessed = 0;
+    int preparingCount = 0;
+    int rejectedCount = 0;
     
+    if (pendingOrders.Count == 0)
+    {
+        Console.WriteLine("No orders to be processed.");
+        return;
+    }
+
+    foreach (Order order in pendingOrders)
+    {
+        Console.WriteLine($"Order ID: {order.OrderId}");
+        Console.WriteLine($"Customer: {order.Customer.EmailAddress}");
+        Console.WriteLine($"Scheduled Delivery: {order.DeliveryDateTime.ToString("HH:mm")}");
+
+        TimeSpan timeUntilDelivery = order.DeliveryDateTime - currentDateTime;
+
+        // if less than 1 hour, reject order
+        if (timeUntilDelivery.TotalHours < 1)
+        {
+            order.OrderStatus = "Rejected";
+            
+            order.Restaurant.RefundStack.Push(order);
+            order.Restaurant.OrderQueue = new Queue<Order>(order.Restaurant.OrderQueue.Where(o => o.OrderId != order.OrderId));
+            Console.WriteLine($"Order {order.OrderId} rejected. Refund of ${order.OrderTotal.ToString("0.00")} processed.\n");
+            rejectedCount++;
+        }
+        else
+        {
+            order.OrderStatus = "Preparing";
+            Console.WriteLine($"Order {order.OrderId} confirmed. Status: Preparing\n");
+            preparingCount++;
+        }
+        UpdateOrderInCSV(order);
+        ordersProcessed++;
+    }
+    Console.WriteLine("\n================================================");
+    Console.WriteLine("Bulk Process Summary");
+    Console.WriteLine("---------------------");
+
+    Console.WriteLine($"Total orders processed: {ordersProcessed}");
+    Console.WriteLine($"Orders set to 'Preparing': {preparingCount}");
+    Console.WriteLine($"Orders auto-rejected: {rejectedCount}");
+
+    // display total refund amount for rejected orders
+    if (rejectedCount > 0)
+    {
+        Console.WriteLine($"Total refund amount: ${pendingOrders.Where(o => o.OrderStatus == "Rejected").Sum(o => o.OrderTotal):F2}");
+    }
+
+    // calculate percentage of orders processed
+    int totalAllOrders = 0;
+    foreach (Restaurant restaurant in restaurantsList)
+    {
+        totalAllOrders += restaurant.OrderQueue.Count;
+    }
+
+    if (totalAllOrders > 0)
+    {
+        double percentageProcessed = (double)ordersProcessed / totalAllOrders * 100;
+        Console.WriteLine($"\nPercentage processed against all orders: {percentageProcessed.ToString("0.0")}%");
+    }
+    Console.WriteLine("================================================");
 }
 
 void DisplayTotalOrderAmounts(List<Restaurant> restaurantsList)
@@ -1195,7 +1293,7 @@ while (true)
             DeleteOrder(customers);
             break;
         case "7":
-            BulkProcessOrders();
+            BulkProcessOrders(restaurants);
             break;
         case "8":
             DisplayTotalOrderAmounts(restaurants);
