@@ -105,6 +105,21 @@ namespace Gruberoo.FoodDeliverySystem
             return MenuList.Remove(menu);
         }
 
+        public FoodItem? FindFoodItem(string itemName)
+        {
+            foreach (Menu menu in MenuList)
+            {
+                foreach (FoodItem foodItem in menu.FoodItemList)
+                {
+                    if (foodItem.ItemName.Equals(itemName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return foodItem;
+                    }
+                }
+            }
+            return null;
+        }
+
         public override string ToString()
         {
             return $"{RestaurantName} (ID: {RestaurantId}) - {RestaurantEmail}";
