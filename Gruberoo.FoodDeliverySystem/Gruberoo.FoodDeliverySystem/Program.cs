@@ -4,17 +4,14 @@
 // Partner Number : S10259724J
 // Partner Name   : Victoria Kate Lee Hui Xin
 //==========================================================
-
 using Gruberoo.FoodDeliverySystem;
-using System.ComponentModel.Design;
 using System.Data;
 using System.Globalization;
-using System.Security.AccessControl;
-using System.Xml.Serialization;
 
 List<Restaurant> restaurants = new List<Restaurant>();
 List<Customer> customers = new List<Customer>();
 SortedDictionary<int, Order> orderList = new SortedDictionary<int, Order>();
+OrderHistoryAnalyzer orderAnalyzer = new OrderHistoryAnalyzer();
 
 double deliveryFee = 5.00;
 
@@ -29,6 +26,7 @@ void DisplayMenu()
     Console.WriteLine("6. Delete an existing order");
     Console.WriteLine("7. Bulk process unprocessed orders");
     Console.WriteLine("8. Display total order amounts");
+    Console.WriteLine("9. View customer order patterns");
     Console.WriteLine("0. Exit");
     Console.Write("Enter your choice: ");
 }
@@ -216,6 +214,7 @@ void InitializeOrders(SortedDictionary<int, Order> orderList, List<Customer> cus
                 orderList.Add(order.OrderId, order);
                 customer.AddOrder(order);
                 restaurant.OrderQueue.Enqueue(order);
+                orderAnalyzer.RecordOrder(order);
 
                 // All cancelled orders are pushed to refund stack
                 if (status == "Cancelled" || status == "Rejected")
@@ -313,7 +312,7 @@ void DisplayAllOrders(SortedDictionary<int, Order> orderList)
     }
 }
 
-void CreateNewOrder(List<Restaurant> restaurants)
+void CreateNewOrder(List<Restaurant> restaurantsList)
 {
     // Basic Function Qn 5
     //==========================================================
@@ -336,12 +335,128 @@ void CreateNewOrder(List<Restaurant> restaurants)
     Console.Write("Enter Restaurant ID: ");
     string restId = Console.ReadLine()?.Trim().ToUpper();
 
-    Restaurant restaurant = restaurants.FirstOrDefault(r => r.RestaurantId == restId);
+    Restaurant restaurant = restaurantsList.FirstOrDefault(r => r.RestaurantId == restId);
 
     if (restaurant == null)
     {
         Console.WriteLine("Invalid restaurant ID.");
         return;
+    }
+
+    List<OrderedFoodItem> orderedItems = new List<OrderedFoodItem>();
+    bool hasOrderedBefore = orderAnalyzer.HasOrderedBefore(custEmail, restId);
+
+    if (hasOrderedBefore)
+    {
+        Console.WriteLine("==================================================");
+        Console.WriteLine("QUICK ORDER - Based on Your Order History");
+        Console.WriteLine("------------------------------------------");
+        List<KeyValuePair<string, int>> frequentItems = orderAnalyzer.GetFrequentItems(custEmail, restId);
+        
+        if (frequentItems.Count > 0)
+        {
+            Console.WriteLine("\nYour most frequently ordered items:");
+            Console.WriteLine("------------------------------------");
+
+            for (int i = 0; i < frequentItems.Count; i++)
+            {
+                KeyValuePair<string, int> item = frequentItems[i];
+                FoodItem foodItem = restaurant.FindFoodItem(item.Key);
+
+                if (foodItem != null)
+                {
+                    Console.WriteLine($"{i + 1}. {foodItem.ItemName} - ${foodItem.ItemPrice.ToString("0.00")} (Ordered {item.Value} times)");
+                }
+            }
+
+            Console.Write("[A]dd all / [N]select items / [S]kip: ");
+
+            string quickOption = Console.ReadLine()?.Trim().ToUpper();
+
+            if (quickOption == "A")
+            {
+                Console.WriteLine("\nAdding all frequent items...");
+                foreach (KeyValuePair<string, int> item in frequentItems)
+                {
+                    FoodItem foodItem = restaurant.FindFoodItem(item.Key);
+
+                    if (foodItem != null)
+                    {
+                        Console.Write($"How many {foodItem.ItemName}? (default: 1): ");
+                        
+                        string qtyInput = Console.ReadLine()?.Trim();
+                        int quantity = string.IsNullOrEmpty(qtyInput) ? 1 : int.Parse(qtyInput);
+
+                        OrderedFoodItem orderedItem = new OrderedFoodItem(
+                               foodItem.ItemName,
+                               foodItem.ItemDesc,
+                               foodItem.ItemPrice,
+                               "", 
+                               quantity
+                        );
+                        orderedItem.CalculateSubTotal();
+                        orderedItems.Add(orderedItem);
+
+                        Console.WriteLine($"Added {quantity}x {foodItem.ItemName}");
+                    }
+                }
+            } 
+            else if (quickOption == "N")
+            {
+                Console.Write("\nSelect items to add (separated by commas e.g., 1,3,4): ");
+                string selection = Console.ReadLine()?.Trim();
+
+                if (!string.IsNullOrEmpty(selection))
+                {
+                    string[] selectedNumbers = selection.Split(',');
+
+                    foreach (string num in selectedNumbers)
+                    {
+                        if (int.TryParse(num.Trim(), out int itemNum) && itemNum >= 1 && itemNum <= frequentItems.Count)
+                        {
+                            KeyValuePair<string, int> selectedItem = frequentItems[itemNum - 1];
+                            FoodItem foodItem = restaurant.FindFoodItem(selectedItem.Key);
+
+                            if (foodItem != null)
+                            {
+                                Console.Write($"How many {foodItem.ItemName}? (default: 1): ");
+
+                                string qtyInput = Console.ReadLine()?.Trim();
+
+                                if (qtyInput == null)
+                                {
+                                    qtyInput = "1";
+                                }
+
+                                if (!int.TryParse(qtyInput, out int quantity) || quantity <= 0)
+                                {
+                                    quantity = 1;
+                                }
+
+                                OrderedFoodItem orderedItem = new OrderedFoodItem(
+                                    foodItem.ItemName,
+                                    foodItem.ItemDesc,
+                                    foodItem.ItemPrice,
+                                    "",
+                                    quantity
+                                );
+                                orderedItem.CalculateSubTotal();
+                                orderedItems.Add(orderedItem);
+
+                                Console.WriteLine($"Added {quantity}x {foodItem.ItemName}");
+                            }
+                        }
+                    }
+                }
+
+                Console.WriteLine("\nQuick order completed! Proceeding to main menu.");
+            }
+            else
+            {
+                Console.WriteLine("Skipping quick order...");
+            }
+        }
+        Console.WriteLine("==================================================");
     }
 
     DateOnly deliveryDate;
@@ -385,8 +500,6 @@ void CreateNewOrder(List<Restaurant> restaurants)
             Console.WriteLine($"{i + 1}. {foodItemList[i].ItemName} - ${foodItemList[i].ItemPrice.ToString("0.00")}");
         }
     }
-
-    List<OrderedFoodItem> orderedItems = new List<OrderedFoodItem>();
 
     // Select food items
     while (true)
@@ -439,7 +552,7 @@ void CreateNewOrder(List<Restaurant> restaurants)
 
     // calculate total (creating a default order object to calculate total)
     Order tempOrder = new Order();
-    foreach (var item in orderedItems)
+    foreach (OrderedFoodItem item in orderedItems)
     {
         tempOrder.AddOrderedFoodItem(item);
     }
@@ -489,6 +602,7 @@ void CreateNewOrder(List<Restaurant> restaurants)
     orderList.Add(newOrder.OrderId, newOrder);
     customer.AddOrder(newOrder);
     restaurant.OrderQueue.Enqueue(newOrder);
+    orderAnalyzer.RecordOrder(newOrder);
 
     // save to csv
     try
@@ -1255,6 +1369,122 @@ void DisplayTotalOrderAmounts(List<Restaurant> restaurantsList)
     Console.WriteLine("========================================");
 }
 
+void ViewCustomerOrderPatterns()
+{
+    // Bonus Function - Customer Order Patterns
+    //==========================================================
+    // Student Number : S10275126J
+    // Student Name   : Guan Jiahong
+    //==========================================================
+    Console.WriteLine("\nCustomer Order Pattern:");
+    Console.WriteLine("========================");
+
+    Console.Write("Enter Customer Email: ");
+    string email = Console.ReadLine()?.Trim();
+
+    Customer customer = customers.FirstOrDefault(c => c.EmailAddress == email);
+    if (customer == null)
+    {
+        Console.WriteLine("Customer not found.");
+        return;
+    }
+
+    Console.WriteLine($"\nOrder History for {customer.CustomerName}");
+    Console.WriteLine($"-------------------{new string('-', customer.CustomerName.Length)}");
+
+    List<string> customerRestaurants = orderAnalyzer.GetCustomerRestaurants(email);
+    if (customerRestaurants.Count == 0)
+    {
+        Console.WriteLine("No orders found for this customer.");
+        return;
+    }
+
+    Console.WriteLine($"\nTotal Restaurants Ordered From: {customerRestaurants.Count}\n");
+
+    // displaying each restaurant and their frequent items from user
+    foreach (string restaurantId in customerRestaurants)
+    {
+        Restaurant restaurant = restaurants.FirstOrDefault(r => r.RestaurantId == restaurantId);
+        if (restaurant == null) continue;
+
+        Console.WriteLine($"Restaurant: {restaurant.RestaurantName} ({restaurantId})");
+        Console.WriteLine("--------------------------------");
+
+        List<KeyValuePair<string, int>> frequentItems = orderAnalyzer.GetFrequentItems(email, restaurantId);
+
+        if (frequentItems.Count == 0)
+        {
+            Console.WriteLine("   No items ordered from this restaurant.\n");
+            continue;
+        }
+
+        if (frequentItems.Count > 0)
+        {
+            Console.WriteLine("Most Frequently Ordered Items:");
+
+            for (int i = 0; i < frequentItems.Count; i++)
+            {
+                KeyValuePair<string, int> item = frequentItems[i];
+                FoodItem foodItem = restaurant.FindFoodItem(item.Key);
+
+                if (foodItem != null)
+                {
+                    Console.WriteLine($"   {i + 1}. {item.Key} - ${foodItem.ItemPrice.ToString("0.00")} [Ordered {item.Value} time(s)]");
+                }
+            }
+        }
+        
+        List<Order> ordersFromRestaurant = customer.Orders.Values
+            .Where(o => o.Restaurant.RestaurantId == restaurantId)
+            .ToList();
+
+        if (ordersFromRestaurant.Count > 0)
+        {
+            double totalSpent = ordersFromRestaurant.Sum(o => o.OrderTotal);
+            double averageOrder = totalSpent / ordersFromRestaurant.Count;
+
+            Console.WriteLine($"\nTotal Amount Spent at {restaurant.RestaurantName}: ${totalSpent.ToString("0.00")}");
+            Console.WriteLine($"Average Order Value at {restaurant.RestaurantName}: ${averageOrder.ToString("0.00")}\n");
+        }
+
+        //spacer
+        Console.WriteLine();
+    }
+    
+    // overall
+    Console.WriteLine("=================================================================");
+    Console.WriteLine("Overall Summary:");
+    Console.WriteLine("----------------");
+
+    int totalOrders = customer.Orders.Count;
+    double totalSpentAll = customer.Orders.Values.Sum(o => o.OrderTotal);
+
+    Console.WriteLine($"Total Orders Placed: {totalOrders}");
+    Console.WriteLine($"Total Amount Spent: ${totalSpentAll.ToString("0.00")}");
+
+    if (totalOrders > 0)
+    {
+        double averageOrderAll = totalSpentAll / totalOrders;
+        Console.WriteLine($"Average Order Value: ${averageOrderAll.ToString("0.00")}");
+
+        var restaurantGroups = customer.Orders.Values
+            .GroupBy(o => o.Restaurant.RestaurantId)
+            .Select(g => new { RestaurantId = g.Key, OrderCount = g.Count() })
+            .OrderByDescending(g => g.OrderCount)
+            .FirstOrDefault();
+
+        if (restaurantGroups != null)
+        {
+            Restaurant favRestaurant = restaurants.FirstOrDefault(r => r.RestaurantId == restaurantGroups.RestaurantId);
+            if (favRestaurant != null)
+            {
+                Console.WriteLine($"Most Frequently Restaurant: {favRestaurant.RestaurantName} ({favRestaurant.RestaurantId}) with {restaurantGroups.OrderCount} orders");
+            }
+        }
+    }
+    Console.WriteLine("=================================================================");
+}
+
 
 // Main program execution
 Console.WriteLine("Welcome to the Gruberoo Food Delivery System");
@@ -1297,6 +1527,9 @@ while (true)
             break;
         case "8":
             DisplayTotalOrderAmounts(restaurants);
+            break;
+        case "9":
+            ViewCustomerOrderPatterns();
             break;
         case "0":
             Console.WriteLine("\n\nExiting the program. Goodbye!");
